@@ -1,0 +1,32 @@
+{
+	"name": "stockOffice",
+	"version": "0.0.1",
+	"private": true,
+	"scripts": {
+		"start": "node node_modules/react-native/local-cli/cli.js start",
+		"test": "jest"
+	},
+	"dependencies": {
+		"form-data": "^2.3.1",
+		"odoo-xmlrpc": "^1.0.6",
+		"react": "16.0.0",
+		"react-native": "0.50.4",
+		"react-native-elements": "^0.18.4",
+		"react-native-keyboard-aware-scroll-view": "^0.4.1",
+		"react-native-odoo": "^0.5.0",
+		"react-native-router-flux": "^4.0.0-beta.24",
+		"react-native-swipe-list-view": "^0.4.7",
+		"react-native-tabbar": "^1.0.0",
+		"react-native-vector-icons": "^4.4.2",
+		"realm": "^2.0.13"
+	},
+	"devDependencies": {
+		"babel-jest": "21.2.0",
+		"babel-preset-react-native": "4.0.0",
+		"jest": "21.2.1",
+		"react-test-renderer": "16.0.0"
+	},
+	"jest": {
+		"preset": "react-native"
+	}
+}
