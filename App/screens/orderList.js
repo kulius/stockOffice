@@ -37,7 +37,8 @@ export default class orderList extends Component<{}> {
       order: "",
       realm: null,
       visible: false,
-      alertText: "",
+      refresh: 0,
+      manager: false,
     };
   }
 
@@ -54,18 +55,22 @@ export default class orderList extends Component<{}> {
                      }
         },
         {name:       'listComponent',
-         properties: {odCode:      {type: 'string' , default: ""},
-                      goodCode:    {type: 'string'},
-                      goodNameCht: {type: 'string' , default: ""},
-                      goodAmoOdoo: {type: 'string'},
-                      goodAmoFir:  {type: 'string', default: "0"},
-                      goodAmoSec:  {type: 'string', default: "0"}
+         properties: {odCode:       {type: 'string' , default: ""},
+                      goodCode:     {type: 'string'},
+                      goodNameCht:  {type: 'string' , default: ""},
+                      goodAmoOdoo:  {type: 'string'},
+                      goodAmoFir:   {type: 'string', default: "0"},
+                      goodAmoSec:   {type: 'string', default: "0"},
+                      goodChkStaFir:{type: 'string', default: "0"},
+                      goodChkStaSec:{type: 'string', default: "0"}
                      }
         },
         {name:       'options',
          properties: {URL:         {type: 'string'},
                       userAccount: {type: 'string'},
-                      userPwd:     {type: 'string'}
+                      userPwd:     {type: 'string'},
+                      accIdentity: {type: 'int'},
+                      manager:     {type: 'bool'}
                       }
         }
       ]
@@ -86,14 +91,18 @@ export default class orderList extends Component<{}> {
           realm.create('options', {
             URL:         "http://60.250.59.24:8069",
             userAccount: "",
-            userPwd:     ""
+            userPwd:     "",
+            accIdentity: 0,
+            manager:     false
           });
         });
         console.log(rmObjectOptions[0].URL);
       }
 
-
-      this.setState({listViewData: newData, listDataCheSta: newDataCheSta});
+      let rmManagerVar = realm.objects('options')[0].manager
+      this.setState({listViewData: newData,
+                     listDataCheSta: newDataCheSta,
+                     manager: rmManagerVar});
       this.setState({ realm });
 
     });
@@ -133,19 +142,6 @@ export default class orderList extends Component<{}> {
     if (odCode != "") {
       this.fetchData(odCode);
 
-      const newData = [...this.state.listViewData];
-      newData.push(odCode);
-      this.setState({listViewData: newData});
-
-      const newDataChe = [...this.state.listDataCheSta];
-      newDataChe.push("0");
-      this.setState({listDataCheSta: newDataChe});
-
-      this.cleanUpTextInput("orderNumber");
-      this.refs["orderNumber"].focus();
-      this.setState({order: ""});
-
-      this.setState({visible: true});
     } else if (odCode == "") {
       Alert.alert(
         '錯誤',
@@ -217,13 +213,28 @@ export default class orderList extends Component<{}> {
         this.setState({returnArray: jsString.split("{")});
 
         this.afterCatchData(orderCode);
+
+
+        const newData = [...this.state.listViewData];
+        newData.push(orderCode);
+        this.setState({listViewData: newData});
+
+        const newDataChe = [...this.state.listDataCheSta];
+        newDataChe.push("0");
+        this.setState({listDataCheSta: newDataChe});
+
+        this.cleanUpTextInput("orderNumber");
+        this.refs["orderNumber"].focus();
+        this.setState({order: ""});
+
+        this.setState({visible: true});
       }
     })
     .catch((error) => {
       console.warn(error);
       Alert.alert(
         '錯誤',
-        '無法順利取回資料，\n請確認網路或網址正常',
+        '無法順利取回資料\n請確認網路或網址正常\n或盤點單號是否正確',
         [ {text: 'OK', onPress: () => this.setState({visible: false})} ],
         { cancelable: false }
       )
@@ -243,12 +254,7 @@ export default class orderList extends Component<{}> {
   //change page to stockCheck with params of order number
   changeToCheck(orderNumber, checkState) {
 
-    Actions.stockCheck({orderNumber: orderNumber, checkState: checkState});
-  }
-
-  //change page to settings
-  changeToSettings() {
-    Actions.settings();
+    Actions.stockCheck({orderNumber: orderNumber, checkState: checkState, title:orderNumber});
   }
 
   //func used inside pushRow
@@ -267,15 +273,6 @@ export default class orderList extends Component<{}> {
         <Spinner visible={this.state.visible} textContent={"Loading..."} textStyle={{color: '#FFF'}} />
 
         <View style={stockStyles.viewContainerR}>
-
-          <TouchableOpacity
-            onPress={ _ => this.changeToSettings()}
-
-            >
-            <Image
-              source={require('../assets/ic_settings.png')}/>
-          </TouchableOpacity>
-
 
           <Text style={{fontSize:20, textAlign:'center', left:10}}>
             盤點單條碼：
@@ -332,7 +329,7 @@ export default class orderList extends Component<{}> {
                     </View>
 
                     {
-                      this.state.listDataCheSta[rowId]=="0" &&
+                      (this.state.listDataCheSta[rowId]=="0" || this.state.manager) &&
                       <TouchableOpacity
                         onPress={ _ => this.changeToCheck(data, 0)}
                         >
@@ -343,7 +340,7 @@ export default class orderList extends Component<{}> {
                     }
 
                     {
-                      this.state.listDataCheSta[rowId]=="1" &&
+                      (this.state.listDataCheSta[rowId]=="1" || this.state.manager) &&
                     <TouchableOpacity
                       onPress={ _ => this.changeToCheck(data, 1)}
                       >
@@ -354,7 +351,7 @@ export default class orderList extends Component<{}> {
                     }
 
                     {
-                      this.state.listDataCheSta[rowId]!="0" && this.state.listDataCheSta[rowId]!="1" &&
+                      (this.state.listDataCheSta[rowId]!="0" && this.state.listDataCheSta[rowId]!="1")  &&
                       <Text style={{alignSelf: "center", fontSize: 20}}>已完成盤點</Text>
                     }
 
@@ -382,9 +379,3 @@ export default class orderList extends Component<{}> {
     );
   }
 }
-
-/*
-
-
-
-*/

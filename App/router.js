@@ -1,18 +1,20 @@
 import React, { Component } from 'react';
 import { Scene, Router }    from 'react-native-router-flux';
 
-import sign          from './sign';
 import main          from './main';
-import orderList from './screens/orderList';
+import sign          from './screens/sign';
+import URLinput      from './screens/URLinput';
+import orderList     from './screens/orderList';
 import stockCheck    from './screens/stockCheck';
 
 const router =() =>{
   return (
       <Router>
       <Scene key="root">
-        <Scene key="orderList" component={ orderList } hideNavBar/>
-        <Scene key="settings" component={ sign }/>
         <Scene key="main" component={ main } hideNavBar/>
+        <Scene key="orderList" component={ orderList }/>
+        <Scene key="sign" component={ sign }/>
+        <Scene key="URLinput" component={ URLinput }/>
         <Scene key="stockCheck" component={ stockCheck }/>
       </Scene>
     </Router>

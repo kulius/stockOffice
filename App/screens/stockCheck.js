@@ -1,16 +1,16 @@
 import React, { Component } from 'react';
 import {
-  Platform,
-  ListView,
   Text,
   View,
   Alert,
   Image,
+  Platform,
+  ListView,
   TextInput,
   StyleSheet,
+  WritableMap,
   TouchableOpacity,
 	TouchableHighlight,
-  WritableMap
 } from 'react-native';
 import FormData from 'form-data';
 import Tabbar from 'react-native-tabbar';
@@ -18,6 +18,7 @@ import { Button } from 'react-native-elements';
 import { Actions } from 'react-native-router-flux';
 import AwesomeAlert from 'react-native-awesome-alerts';
 import { SwipeListView, SwipeRow } from 'react-native-swipe-list-view';
+import PopupDialog, { SlideAnimation }  from 'react-native-popup-dialog';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 import stockStyles from '../styles/stockStyles';
@@ -36,22 +37,18 @@ export default class stockCheck extends Component<{}> {
       listViewDataAMOodoo: Array(),
       dataGoodState:       Array(),
       arForSecSee:         Array(),
+      realm: null,
       showAlert: false,
       stockAmount: "",
-      stockNum: "",
-      realm: null,
       findcount: "",
+      stockNum: "",
+      dialogGood: "",
+      dialogCount: "",
+      dialogTempCount: "",
       orderNumber: this.props.orderNumber,
       checkState:  this.props.checkState,
     };
   }
-
-  //funcs about alert
-  showAlert = () => {
-    this.setState({
-      showAlert: true
-    });
-  };
 
   //realm first setting
   componentWillMount() {
@@ -66,18 +63,22 @@ export default class stockCheck extends Component<{}> {
                      }
         },
         {name:       'listComponent',
-         properties: {odCode:      {type: 'string' , default: ""},
-                      goodCode:    {type: 'string'},
-                      goodNameCht: {type: 'string' , default: ""},
-                      goodAmoOdoo: {type: 'string'},
-                      goodAmoFir:  {type: 'string', default: "0"},
-                      goodAmoSec:  {type: 'string', default: "0"}
+         properties: {odCode:       {type: 'string' , default: ""},
+                      goodCode:     {type: 'string'},
+                      goodNameCht:  {type: 'string' , default: ""},
+                      goodAmoOdoo:  {type: 'string'},
+                      goodAmoFir:   {type: 'string', default: "0"},
+                      goodAmoSec:   {type: 'string', default: "0"},
+                      goodChkStaFir:{type: 'string', default: "0"},
+                      goodChkStaSec:{type: 'string', default: "0"}
                      }
         },
         {name:       'options',
          properties: {URL:         {type: 'string'},
                       userAccount: {type: 'string'},
-                      userPwd:     {type: 'string'}
+                      userPwd:     {type: 'string'},
+                      accIdentity: {type: 'int'},
+                      manager:     {type: 'bool'}
                       }
         }
       ]
@@ -96,13 +97,13 @@ export default class stockCheck extends Component<{}> {
             newDataNUM.push(rmObjectOrderList.goodsDetail[loop].goodCode);
             if (this.state.checkState == 0) {
               newDataAMO.push(rmObjectOrderList.goodsDetail[loop].goodAmoFir);
+              newDataSta.push(rmObjectOrderList.goodChkStaFir[loop].goodAmoOdoo);
             } else if (this.state.checkState == 1) {
               newDataAMO.push(rmObjectOrderList.goodsDetail[loop].goodAmoSec);
               newDataSee.push(rmObjectOrderList.goodsDetail[loop].goodAmoFir);
+              newDataSta.push(rmObjectOrderList.goodChkStaSec[loop].goodAmoOdoo);
             }
-
             newDataAMOodoo.push(rmObjectOrderList.goodsDetail[loop].goodAmoOdoo);
-            newDataSta.push("0");
           }
         }
         this.setState({listViewDataNUM: newDataNUM, listViewDataAMO: newDataAMO,
@@ -137,6 +138,13 @@ export default class stockCheck extends Component<{}> {
     });
   }
 
+  //func for inputText change amount in dialog
+  changeStateDialogAmount(stockAmount) {
+    this.setState({
+      dialogTempCount: stockAmount
+    });
+  }
+
   //delete data in list
   deleteRow(secId, rowId, rowMap) {
     this.deleteGoodRealm(this.state.listViewDataNUM[rowId]);
@@ -163,6 +171,13 @@ export default class stockCheck extends Component<{}> {
     newDataSecSee.splice(rowId, 1);
     this.setState({arForSecSee: newDataSecSee});
   }
+
+  //funcs about alert
+  showAlert = () => {
+    this.setState({
+      showAlert: true
+    });
+  };
 
   //push data to list
   pushRow(Num, Amount) {
@@ -193,8 +208,8 @@ export default class stockCheck extends Component<{}> {
 
         const newDataGoodState = Array();
         var tempState = [...this.state.dataGoodState];
-        newDataGoodState.push(tempState[index]);
         tempState.splice(index,1),
+        newDataGoodState.push("2");
         newDataGoodState.push(...tempState);
         this.setState({dataGoodState: newDataGoodState});
 
@@ -304,6 +319,7 @@ export default class stockCheck extends Component<{}> {
     });
   }
 
+
   updataCreatNewRealm(stockNum, stockAmount) {
     this.state.realm.write(() => {
       var rmObject = this.state.realm.objects("orderList").filtered("odCode=='" + this.state.orderNumber + "'")[0];
@@ -380,15 +396,32 @@ export default class stockCheck extends Component<{}> {
   //only update realm data
   updateRealmOnly() {
     //the command below can pop the scene and refresh the scene
-    Actions.pop({refresh: ({key: Math.random()})})
+    Actions.pop({refresh: ({key: Math.random()})});
   }
+
+  showDialog(goodNumber, goodCount) {
+    this.setState({
+      dialogGood: goodNumber,
+      dialogCount: goodCount,
+    });
+    this.popupDialog.show();
+  }
+
+  dismissDialog() {
+    pushRow(this.state.dialogGood, this.state.dialogCount);
+    this.popupDialog.dismiss();
+  }
+
+
 
   render() {
     return (
 
-<KeyboardAwareScrollView>
+
 
       <View style={stockStyles.mainContainer}>
+
+        <KeyboardAwareScrollView>
 
         <View style={stockStyles.viewContainerR}>
 
@@ -408,8 +441,6 @@ export default class stockCheck extends Component<{}> {
             {this.state.findcount}
           </Text>
         </View>
-
-
 
         <View style={stockStyles.viewContainerR}>
           <Text style={{fontSize:20, textAlign:'center'}} >
@@ -468,7 +499,7 @@ export default class stockCheck extends Component<{}> {
   						dataSource={this.dsNUM.cloneWithRows(this.state.listViewDataNUM)}
   						renderRow={ (data, secId, rowId) => (
   							<TouchableHighlight
-  								onPress={ _ => console.log('You touched me') }
+  								onPress={ _ => showDialog(data, this.state.listViewDataAMO[rowId]) }
   								style={stockStyles.rowFront}
   								underlayColor={'#AAA'}
   							>
@@ -497,9 +528,28 @@ export default class stockCheck extends Component<{}> {
   						rightOpenValue={-75}
   					/>
   				}
-
-
         </View>
+
+          <PopupDialog
+            dialogTitle={<DialogTitle title="更改數量" />}
+            dialogButton={<DialogButton text="OK" onPress={ _ => dismissDialog() }/>}
+            ref={(popupDialog) => { this.popupDialog = popupDialog; }}
+            dialogAnimation={slideAnimation}
+            >
+              <View>
+                <Text>目前修改：{this.state.dialogGood}</Text>
+                <Text>當前數量：{this.state.dialogCount}</Text>
+                <Text>修改數量：</Text>
+                <TextInput
+                  placeholder='數量'
+                  clearButtonMode='always'
+                  autoFocus= {true}
+                  style={stockStyles.textInputContainer}
+                  onChangeText={(text)=>this.changeStateDialogAmount(text)}/>
+              </View>
+            </PopupDialog>
+
+          </KeyboardAwareScrollView>
 
         <View style={stockStyles.tabContainer}>
 
@@ -519,13 +569,9 @@ export default class stockCheck extends Component<{}> {
               source={require('../assets/onlySave.png')}/>
 
           </TouchableOpacity>
-
-
         </View>
-
-
       </View>
-</KeyboardAwareScrollView>
+
     );
   }
 }
