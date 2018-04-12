@@ -6,13 +6,16 @@ import {
   Platform,
   TextInput,
   StyleSheet,
-  TouchableOpacity
+  AsyncStorage,
+  TouchableOpacity,
+  ImageBackground,
 } from 'react-native';
-import SideMenu   from 'react-native-side-menu';
-
-import Menu       from './sideMenu/Menu';
-import mainStyles from './styles/mainStyles';
-
+import SideMenu       from 'react-native-side-menu';
+import { Actions }    from 'react-native-router-flux';
+import Menu           from './sideMenu/Menu';
+import mainStyles     from './styles/mainStyles';
+import inputDataFuncs from './libs/dataFuncs.js';
+const Realm = require('realm');
 const image = require('./assets/menu.png');
 
 export default class main extends Component<{}> {
@@ -22,7 +25,6 @@ export default class main extends Component<{}> {
     this.toggle = this.toggle.bind(this);
     this.state = {
       isOpen: false,
-      manager: false,
       realm: null,
     };
   }
@@ -30,6 +32,25 @@ export default class main extends Component<{}> {
   componentWillMount() {
     Realm.open({
       schema: [
+        {name:       'orderList',
+         primaryKey: 'odCode',
+         properties: {odCode:      {type: 'string'},
+                      odNameCht:   {type: 'string', default: ""},
+                      odChkSta :   {type: 'string', default: "0"},
+                      goodsDetail: {type: 'list', objectType:'listComponent', default: []}
+                     }
+        },
+        {name:       'listComponent',
+         properties: {odCode:       {type: 'string' , default: ""},
+                      goodCode:     {type: 'string'},
+                      goodNameCht:  {type: 'string' , default: ""},
+                      goodAmoOdoo:  {type: 'string'},
+                      goodAmoFir:   {type: 'string', default: "0"},
+                      goodAmoSec:   {type: 'string', default: "0"},
+                      goodChkStaFir:{type: 'string', default: "0"},
+                      goodChkStaSec:{type: 'string', default: "2"}
+                     }
+        },
         {name:       'options',
          properties: {URL:         {type: 'string'},
                       userAccount: {type: 'string'},
@@ -45,19 +66,18 @@ export default class main extends Component<{}> {
       if (rmObjectOptions.length==0) {
         realm.write(() => {
           realm.create('options', {
-            URL:         "http://60.250.59.24:8069",
+            URL:         "http://60.250.59.19:8069",
             userAccount: "",
             userPwd:     "",
             accIdentity: 0,
             manager:     false
           });
         });
-        console.log(rmObjectOptions[0].URL);
       }
 
-      this.setState({manager: rmObjectOptions[0].manager});
       this.setState({ realm });
 
+      realm.close();
     });
   }
 
@@ -71,22 +91,6 @@ export default class main extends Component<{}> {
     this.setState({ isOpen });
   }
 
-  onMenuItemSelected = item =>
-    this.setState({
-      isOpen: false,
-      selectedItem: item,
-    });
-
-  errorHandler(code, message) {
-    this.setState({
-      error: !code ? null :
-        {
-          code,
-          message,
-        }
-    })
-  }
-
   render() {
     const menu = <Menu/>;
     return (
@@ -95,18 +99,72 @@ export default class main extends Component<{}> {
         menu={menu}
         isOpen={this.state.isOpen}
         onChange={isOpen => this.updateMenuState(isOpen)}>
+
+
         <View style={mainStyles.signContainer}>
+          <ImageBackground
+            source={ require('./assets/mainBackground.png') }
+            style={{height:667,width:360}}>
 
-          <TouchableOpacity
-            onPress={this.toggle}
-            style={mainStyles.button}>
-            <Image
-              source={image}
-              style={{ width: 32, height: 32}}/>
-          </TouchableOpacity>
+            <View style={mainStyles.toogleContainer}>
+              <TouchableOpacity
+                onPress={this.toggle}
+                style={mainStyles.button}>
+                <Image
+                  source={image}
+                  style={{ width: 32, height: 32}}/>
+                </TouchableOpacity>
+            </View>
 
+
+            <View style={mainStyles.container}>
+
+
+
+              <TouchableOpacity
+                onPress={() => { Actions.orderList(); } }
+                style={mainStyles.viewItemContainer}>
+                <Image
+                  source={ require('./assets/icon01_barcode.png') }
+                  style={{ width: 35, height: 35}}/>
+
+                  <Text style={mainStyles.itemFont}>
+                    盤點
+                  </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => { Actions.sign(); } }
+                style={mainStyles.viewItemContainer}>
+                <Image
+                  source={ require('./assets/icon02_login.png') }
+                  style={{ width: 35, height: 35}}/>
+
+                  <Text style={mainStyles.itemFont}>
+                    登入
+                  </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => { inputDataFuncs.getFormattedDatetime(); } }
+                style={mainStyles.viewItemContainer}>
+                <Image
+                  source={ require('./assets/icon03_URL.png') }
+                  style={{ width: 35, height: 35}}/>
+
+                  <Text style={mainStyles.itemFont}>
+                    URL設定
+                  </Text>
+              </TouchableOpacity>
+
+
+            </View>
+          </ImageBackground>
         </View>
+
       </SideMenu>
+
+
     );
   }
 }

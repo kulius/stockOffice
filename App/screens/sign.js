@@ -1,27 +1,46 @@
 import React, { Component }  from 'react';
-import { Text, View, Alert } from 'react-native';
+import { Text, View, Alert, AsyncStorage, TouchableOpacity, ImageBackground } from 'react-native';
 import { Actions } from 'react-native-router-flux';
-import { FormLabel, FormInput, FormValidationMessage, Button } from 'react-native-elements'
+import { FormLabel, FormInput, FormValidationMessage } from 'react-native-elements'
 
-import mainStyles  from '../styles/mainStyles';
+import signStyles from '../styles/signStyles.js';
 const Realm = require('realm');
 
 export default class sign extends Component<{}> {
   constructor(props) {
     super(props);
     this.state = {
-      stateAcc: "",
-      statePwd: "",
-      realm   : null,
-      optionsObject: null,
-      errorState  : 0,
-      errorMessage: "data error!",
+      stateAcc:       "",
+      statePwd:       "",
+      realm   :       null,
+      optionsObject:  null,
+      errorState  :   0,
+      errorMessage:   "data error!",
     };
   }
 
   componentWillMount() {
     Realm.open({
       schema: [
+        {name:       'orderList',
+         primaryKey: 'odCode',
+         properties: {odCode:      {type: 'string'},
+                      odNameCht:   {type: 'string', default: ""},
+                      odChkSta :   {type: 'string', default: "0"},
+                      goodsDetail: {type: 'list', objectType:'listComponent', default: []}
+                     }
+        },
+        {name:       'listComponent',
+         properties: {odCode:       {type: 'string' , default: ""},
+                      goodCode:     {type: 'string'},
+                      goodNameCht:  {type: 'string' , default: ""},
+                      goodAmoOdoo:  {type: 'string'},
+                      goodAmoFir:   {type: 'string', default: "0"},
+                      goodAmoSec:   {type: 'string', default: "0"},
+                      goodChkStaFir:{type: 'string', default: "0"},
+                      goodChkStaSec:{type: 'string', default: "2"}
+                     }
+        },
         {name:       'options',
          properties: {URL:         {type: 'string'},
                       userAccount: {type: 'string'},
@@ -65,6 +84,13 @@ export default class sign extends Component<{}> {
     this.state.realm.write(() => {
       this.state.optionsObject.userAccount = this.state.stateAcc;
       this.state.optionsObject.userPwd     = this.state.statePwd;
+      if ( this.state.stateAcc=="admin" && this.state.statePwd=="admin" ){
+        AsyncStorage.multiSet([ ['identity', "yes"] ]);
+        this.state.optionsObject.manager=true;
+      } else {
+        AsyncStorage.multiSet([ ['identity', "no"] ]);
+        this.state.optionsObject.manager=false;
+      }
     })
 
     Alert.alert(
@@ -82,32 +108,48 @@ export default class sign extends Component<{}> {
 
   render() {
    return (
-       <View style={mainStyles.signContainer}>
-         <FormLabel>Account</FormLabel>
-         <FormInput
-           ref={"inputAccount"}
-           placeholder={this.state.stateAcc}
-           onChangeText={(text)=>this.changeStateAcc(text)} />
+     <ImageBackground
+       source={ require('../assets/mainBackground.png') }
+       style={{height:667,width:360}}>
 
+       <View style={signStyles.signContainer}>
 
-         <FormLabel>Password</FormLabel>
-         <FormInput
-           ref={"inputPassword"}
-           onChangeText={(text)=>this.changeStatePwd(text)}
-           secureTextEntry={true}
-         />
+         <View style={signStyles.inContainer}>
+           <Text style={signStyles.helloText}>Hello!</Text>
+           <Text style={signStyles.welcomeText}>Welcome To Stocktake System.</Text>
+         </View>
 
-         { this.state.errorState == 1 &&
-           <FormValidationMessage>{this.state.errorMessage}</FormValidationMessage>
-         }
+         <View style={signStyles.inContainer}>
+           <FormLabel>Account</FormLabel>
+           <FormInput
+            ref={"inputAccount"}
+            placeholder={this.state.stateAcc}
+            placeholderTextColor='#5F769A'
+            onChangeText={(text)=>this.changeStateAcc(text)} />
+         </View>
 
-         <Button
-           iconRight={{name:'forward'}}
-           title='確認'
-           onPress={() => { this.inputDataRealmOptions() } }
-         />
+         <View style={signStyles.inContainer}>
+           <FormLabel>Password</FormLabel>
+           <FormInput
+            ref={"inputPassword"}
+            onChangeText={(text)=>this.changeStatePwd(text)}
+            secureTextEntry={true}/>
+
+           {this.state.errorState == 1 &&
+            <FormValidationMessage>{this.state.errorMessage}</FormValidationMessage> }
+         </View>
+
+         <View style={signStyles.inContainer}>
+           <TouchableOpacity style={signStyles.loginBtn} onPress={ _ => this.inputDataRealmOptions()}>
+             <Text style={signStyles.loginText}>
+               Login
+             </Text>
+           </TouchableOpacity>
+         </View>
 
        </View>
+
+     </ImageBackground>
     );
   }
 }

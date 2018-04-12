@@ -9,17 +9,16 @@ import {
   TextInput,
   StyleSheet,
   Dimensions,
+  ImageBackground,
   TouchableOpacity,
 	TouchableHighlight,
   KeyboardAvoidingView,
 } from 'react-native';
-import Tabbar from 'react-native-tabbar';
 import { Button } from 'react-native-elements';
 import { Actions } from 'react-native-router-flux';
 import Spinner from 'react-native-loading-spinner-overlay';
 import { SwipeListView, SwipeRow } from 'react-native-swipe-list-view';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-
 import stockStyles from '../styles/stockStyles';
 import DataFuncs   from '../libs/dataFuncs';
 
@@ -62,7 +61,7 @@ export default class orderList extends Component<{}> {
                       goodAmoFir:   {type: 'string', default: "0"},
                       goodAmoSec:   {type: 'string', default: "0"},
                       goodChkStaFir:{type: 'string', default: "0"},
-                      goodChkStaSec:{type: 'string', default: "0"}
+                      goodChkStaSec:{type: 'string', default: "2"}
                      }
         },
         {name:       'options',
@@ -84,27 +83,11 @@ export default class orderList extends Component<{}> {
           newDataCheSta.push(rmObjectOrderList[loop].odChkSta);
         }
       }
-      let rmObjectOptions = realm.objects('options');
-
-      if (rmObjectOptions.length==0) {
-        realm.write(() => {
-          realm.create('options', {
-            URL:         "http://60.250.59.24:8069",
-            userAccount: "",
-            userPwd:     "",
-            accIdentity: 0,
-            manager:     false
-          });
-        });
-        console.log(rmObjectOptions[0].URL);
-      }
-
       let rmManagerVar = realm.objects('options')[0].manager
       this.setState({listViewData: newData,
                      listDataCheSta: newDataCheSta,
                      manager: rmManagerVar});
       this.setState({ realm });
-
     });
   }
 
@@ -126,7 +109,6 @@ export default class orderList extends Component<{}> {
     newData.splice(rowId, 1);
     this.setState({listViewData: newData});
 
-
     newDataChe.splice(rowId, 1);
     this.setState({listDataCheSta: newDataChe});
   }
@@ -140,8 +122,8 @@ export default class orderList extends Component<{}> {
   //func for appned list
   pushRow(odCode) {
     if (odCode != "") {
+      // this.creatRealmListData(odCode);
       this.fetchData(odCode);
-
     } else if (odCode == "") {
       Alert.alert(
         '錯誤',
@@ -187,6 +169,7 @@ export default class orderList extends Component<{}> {
 
   // connect to odoo to get goods detail from order list
   fetchData (orderCode) {
+    this.setState({visible: true});
     var queryURL = this.state.realm.objects('options')[0].URL + "/alltopcheck/alltopcheck/json";
     console.log(queryURL);
     fetch(queryURL, {
@@ -227,7 +210,7 @@ export default class orderList extends Component<{}> {
         this.refs["orderNumber"].focus();
         this.setState({order: ""});
 
-        this.setState({visible: true});
+        this.setState({visible: false});
       }
     })
     .catch((error) => {
@@ -246,14 +229,20 @@ export default class orderList extends Component<{}> {
     for (var i = 1 ; i<this.state.returnArray.length ; i++) {
 
       var tempArray = this.state.returnArray[i].split(" ");
-      this.creatRealmGoodData(orderCode, tempArray[3], tempArray[1])
+      var namePosition = tempArray.indexOf("name");
+      var goodCode = "";
+      if (namePosition==5) {
+        goodCode = tempArray[3] + " " + tempArray[4];
+      } else {
+        goodCode = tempArray[3];
+      }
+      this.creatRealmGoodData(orderCode, goodCode, tempArray[1])
     }
     this.setState({visible: false});
   }
 
   //change page to stockCheck with params of order number
   changeToCheck(orderNumber, checkState) {
-
     Actions.stockCheck({orderNumber: orderNumber, checkState: checkState, title:orderNumber});
   }
 
@@ -268,33 +257,32 @@ export default class orderList extends Component<{}> {
     console.ignoredYellowBox = ['Remote debugger'];
     const barWidth = Dimensions.get('screen').width - 30;
     return (
+      <ImageBackground
+        source={ require('../assets/mainBackground.png') }
+        style={{height:667,width:360}}>
       <KeyboardAwareScrollView>
       <View style={stockStyles.mainContainer}>
         <Spinner visible={this.state.visible} textContent={"Loading..."} textStyle={{color: '#FFF'}} />
 
         <View style={stockStyles.viewContainerR}>
-
-          <Text style={{fontSize:20, textAlign:'center', left:10}}>
-            盤點單條碼：
-          </Text>
-
           <TextInput
             autoFocus={true}
             placeholder='請掃描QRCode'
             clearButtonMode='always'
             style={stockStyles.textInputContainer}
+            placeholderTextColor='#5F769A'
             onChangeText={(text)=>this.changeState(text)}
             ref={"orderNumber"}
             />
         </View>
 
-        <View style={stockStyles.viewContainerR}>
+        <View style={stockStyles.viewContainerR , {marginTop: 20 ,marginBottom: 20}}>
           <TouchableOpacity
-            style={stockStyles.tabItem}
+            style={stockStyles.checkButton}
             onPress={ _ => this.pushRow(this.state.order)}>
-            <Image
-              style={{width: 118*0.75, height: 43*0.75}}
-              source={require('../assets/checkButton.png')}/>
+            <Text style={stockStyles.checkText}>
+              確認
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -302,7 +290,7 @@ export default class orderList extends Component<{}> {
 
           <View style={stockStyles.viewRowBar1}>
 
-            <Text style={{fontSize:20, textAlign:'center', color:'white'}} >
+            <Text style={{fontSize:20, color:'white', fontWeight: 'bold', marginLeft: 26}} >
               盤點單條碼
             </Text>
 
@@ -310,8 +298,6 @@ export default class orderList extends Component<{}> {
         </View>
 
         <View style={stockStyles.viewContainerL}>
-
-
           {
   					this.state.listViewData.length > 0 &&
 
@@ -332,21 +318,21 @@ export default class orderList extends Component<{}> {
                       (this.state.listDataCheSta[rowId]=="0" || this.state.manager) &&
                       <TouchableOpacity
                         onPress={ _ => this.changeToCheck(data, 0)}
-                        >
-                          <Image
-                            style={{width: 118*0.75, height: 43*0.75}}
-                            source={require('../assets/firstCheck.png')}/>
-                          </TouchableOpacity>
+                        style={stockStyles.firstCheck}>
+                          <Text style={stockStyles.buttonCheck}>
+                            初盤
+                          </Text>
+                      </TouchableOpacity>
                     }
 
                     {
                       (this.state.listDataCheSta[rowId]=="1" || this.state.manager) &&
                     <TouchableOpacity
                       onPress={ _ => this.changeToCheck(data, 1)}
-                      >
-                      <Image
-                        style={{width: 118*0.75, height: 43*0.75}}
-                        source={require('../assets/secondCheck.png')}/>
+                      style={stockStyles.secondCheck}>
+                      <Text style={stockStyles.buttonCheck}>
+                        複盤
+                      </Text>
                     </TouchableOpacity>
                     }
 
@@ -370,12 +356,11 @@ export default class orderList extends Component<{}> {
   						rightOpenValue={-75}
   					/>
   				}
-
-
         </View>
 
       </View>
     </KeyboardAwareScrollView>
+    </ImageBackground>
     );
   }
 }

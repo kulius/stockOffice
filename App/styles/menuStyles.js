@@ -5,38 +5,37 @@ export default styles = StyleSheet.create({
     flex: 1,
     width: window.width,
     height: window.height,
-    backgroundColor: 'gray',
+    backgroundColor: '#FF6E02',
     padding: 20,
   },
   avatarContainer: {
+    alignItems: 'center',
     marginBottom: 20,
     marginTop: 20,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 64,
+    height: 64,
+    borderRadius: 35,
     flex: 1,
   },
   itemContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
     width: window.width,
+    marginTop: 5,
   },
   icon: {
-    width: 48,
-    height: 48,
-    flex: 1,
+    width: 25,
+    height: 25,
   },
   name: {
-    position: 'absolute',
-    left: 70,
-    top: 20,
-    color: '#178d92',
+    fontSize: 30,
+    color: 'white',
   },
   item: {
-    fontSize: 20,
-    fontWeight: '400',
-    paddingTop: 12,
+    fontSize: 22,
+    fontWeight: '300',
     paddingLeft: 10,
     flex: 3
   },
@@ -47,4 +46,9 @@ export default styles = StyleSheet.create({
     borderWidth: 2,
     borderRadius: 3,
   },
+  viewItemContainer: {
+    alignItems: 'center',
+    marginTop: 1,
+    marginBottom: 1,
+  }
 });

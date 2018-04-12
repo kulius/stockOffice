@@ -9,16 +9,15 @@ import {
   TextInput,
   StyleSheet,
   WritableMap,
+  ImageBackground,
   TouchableOpacity,
 	TouchableHighlight,
 } from 'react-native';
 import FormData from 'form-data';
-import Tabbar from 'react-native-tabbar';
-import { Button } from 'react-native-elements';
 import { Actions } from 'react-native-router-flux';
 import AwesomeAlert from 'react-native-awesome-alerts';
 import { SwipeListView, SwipeRow } from 'react-native-swipe-list-view';
-import PopupDialog, { SlideAnimation }  from 'react-native-popup-dialog';
+import PopupDialog, { slideAnimation, DialogTitle, DialogButton }  from 'react-native-popup-dialog';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 import stockStyles from '../styles/stockStyles';
@@ -35,18 +34,19 @@ export default class stockCheck extends Component<{}> {
       listViewDataNUM:     Array(),
       listViewDataAMO:     Array(),
       listViewDataAMOodoo: Array(),
+      listGoodNumUpper:    Array(),
       dataGoodState:       Array(),
       arForSecSee:         Array(),
-      realm: null,
-      showAlert: false,
-      stockAmount: "",
-      findcount: "",
-      stockNum: "",
-      dialogGood: "",
-      dialogCount: "",
-      dialogTempCount: "",
-      orderNumber: this.props.orderNumber,
-      checkState:  this.props.checkState,
+      realm:               null,
+      showAlert:           false,
+      stockAmount:         "",
+      findcount:           "",
+      stockNum:            "",
+      dialogGood:          "",
+      dialogCount:         "",
+      dialogTempCount:     "",
+      orderNumber:         this.props.orderNumber,
+      checkState:          this.props.checkState,
     };
   }
 
@@ -70,7 +70,7 @@ export default class stockCheck extends Component<{}> {
                       goodAmoFir:   {type: 'string', default: "0"},
                       goodAmoSec:   {type: 'string', default: "0"},
                       goodChkStaFir:{type: 'string', default: "0"},
-                      goodChkStaSec:{type: 'string', default: "0"}
+                      goodChkStaSec:{type: 'string', default: "2"}
                      }
         },
         {name:       'options',
@@ -88,6 +88,7 @@ export default class stockCheck extends Component<{}> {
         const newDataAMOodoo = [...this.state.listViewDataAMOodoo];
         const newDataSee     = [...this.state.arForSecSee];
         const newDataSta     = [...this.state.dataGoodState];
+        const newGoodNumUpper= [...this.state.listGoodNumUpper];
 
         let rmObjectOrderList = realm.objects('orderList').filtered("odCode == '" + this.state.orderNumber + "'")[0];
 
@@ -95,20 +96,21 @@ export default class stockCheck extends Component<{}> {
         if (rmObjectOrderList) {
           for (var loop = 0 ; loop < rmObjectOrderList.goodsDetail.length ; loop ++ ) {
             newDataNUM.push(rmObjectOrderList.goodsDetail[loop].goodCode);
+            newGoodNumUpper.push(rmObjectOrderList.goodsDetail[loop].goodCode.toUpperCase());
             if (this.state.checkState == 0) {
               newDataAMO.push(rmObjectOrderList.goodsDetail[loop].goodAmoFir);
-              newDataSta.push(rmObjectOrderList.goodChkStaFir[loop].goodAmoOdoo);
+              newDataSta.push(rmObjectOrderList.goodsDetail[loop].goodChkStaFir);
             } else if (this.state.checkState == 1) {
               newDataAMO.push(rmObjectOrderList.goodsDetail[loop].goodAmoSec);
               newDataSee.push(rmObjectOrderList.goodsDetail[loop].goodAmoFir);
-              newDataSta.push(rmObjectOrderList.goodChkStaSec[loop].goodAmoOdoo);
+              newDataSta.push(rmObjectOrderList.goodsDetail[loop].goodChkStaSec);
             }
             newDataAMOodoo.push(rmObjectOrderList.goodsDetail[loop].goodAmoOdoo);
           }
         }
         this.setState({listViewDataNUM: newDataNUM, listViewDataAMO: newDataAMO,
                        listViewDataAMOodoo: newDataAMOodoo, dataGoodState: newDataSta,
-                       arForSecSee: newDataSee});
+                       arForSecSee: newDataSee, listGoodNumUpper: newGoodNumUpper});
 
         this.setState({ realm });
       });
@@ -117,9 +119,9 @@ export default class stockCheck extends Component<{}> {
   //func for inputText change number
   changeStateNum(stockNum) {
     this.setState({
-      stockNum: stockNum
+      stockNum: stockNum.toUpperCase()
     });
-    var index = this.state.listViewDataNUM.indexOf(stockNum);
+    var index = this.state.listGoodNumUpper.indexOf(stockNum.toUpperCase());
     if (index>=0) {
       this.refs["textAmount"].focus();
       if (this.state.checkState==0){
@@ -127,7 +129,6 @@ export default class stockCheck extends Component<{}> {
       } else if (this.state.checkState==1) {
         this.setState({findcount: this.state.arForSecSee[index]});
       }
-
     }
   }
 
@@ -184,7 +185,7 @@ export default class stockCheck extends Component<{}> {
     if (Num != "" && Amount != ""){
       var index = this.state.listViewDataNUM.indexOf(Num);
       if (index >= 0){
-        this.updateSingleGoodsRealm(Num, Amount);
+        this.updateSingleGoodsRealm(Num, Amount, "2");
         const newDataNUM = Array();
         var tempNum = [...this.state.listViewDataNUM];
         tempNum.splice(index,1);
@@ -202,13 +203,13 @@ export default class stockCheck extends Component<{}> {
         const newDataAMOodoo = Array();
         var tempOdoo = [...this.state.listViewDataAMOodoo];
         newDataAMOodoo.push(tempOdoo[index]);
-        tempOdoo.splice(index,1),
+        tempOdoo.splice(index,1);
         newDataAMOodoo.push(...tempOdoo);
         this.setState({listViewDataAMOodoo: newDataAMOodoo});
 
         const newDataGoodState = Array();
         var tempState = [...this.state.dataGoodState];
-        tempState.splice(index,1),
+        tempState.splice(index,1);
         newDataGoodState.push("2");
         newDataGoodState.push(...tempState);
         this.setState({dataGoodState: newDataGoodState});
@@ -216,11 +217,19 @@ export default class stockCheck extends Component<{}> {
         const newDataSecSee = Array();
         var tempSecSee = [...this.state.arForSecSee];
         newDataSecSee.push(tempSecSee[index]);
-        tempSecSee.splice(index,1),
+        tempSecSee.splice(index,1);
         newDataSecSee.push(...tempSecSee);
         this.setState({arForSecSee: newDataSecSee});
+
+        const newDataUpperGoodNum = Array();
+        var tempStateUpper = [...this.state.listGoodNumUpper];
+        newDataUpperGoodNum.push(tempStateUpper[index]);
+        tempStateUpper.splice(index,1);
+        newDataUpperGoodNum.push(...tempStateUpper);
+        this.setState({listGoodNumUpper: newDataUpperGoodNum});
       } else {
         this.updataCreatNewRealm(Num, Amount);
+
         const newDataNUM = Array();
         newDataNUM.push(Num);
         newDataNUM.push(...this.state.listViewDataNUM);
@@ -238,13 +247,18 @@ export default class stockCheck extends Component<{}> {
 
         const newDataGoodState = Array();
         newDataGoodState.push("1");
-        newDataGoodState.push(...this.state.listViewDataAMOodoo);
+        newDataGoodState.push(...this.state.dataGoodState);
         this.setState({dataGoodState: newDataGoodState});
 
         const newDataSecSee = Array();
         newDataSecSee.push("0");
         newDataSecSee.push(...this.state.arForSecSee);
         this.setState({arForSecSee: newDataSecSee});
+
+        const newDataUpperGoodNum = Array();
+        newDataUpperGoodNum.push(Num.toUpperCase());
+        newDataUpperGoodNum.push(...this.state.listGoodNumUpper);
+        this.setState({listGoodNumUpper: newDataUpperGoodNum});
       }
       this.cleanUpTextInput("textQRcode");
       this.cleanUpTextInput("textAmount");
@@ -298,7 +312,7 @@ export default class stockCheck extends Component<{}> {
   }
 
   //update single goods in a order
-  updateSingleGoodsRealm(stockNum, stockAmount) {
+  updateSingleGoodsRealm(stockNum, stockAmount, updateSta) {
     this.state.realm.write(() => {
       var rmObject = this.state.realm.objects("orderList").filtered("odCode=='" + this.state.orderNumber + "'")[0];
 
@@ -309,11 +323,17 @@ export default class stockCheck extends Component<{}> {
         }
       }
 
-      if (this.state.checkState==0) {
+      if (this.state.checkState == 0) {
         rmObject.goodsDetail[index].goodAmoFir = stockAmount;
         rmObject.goodsDetail[index].goodAmoSec = stockAmount;
       } else {
         rmObject.goodsDetail[index].goodAmoSec = stockAmount;
+      }
+
+      if (this.state.checkState == 0) {
+        rmObject.goodsDetail[index].goodChkStaFir = updateSta;
+      } else if  (this.state.checkState == 1) {
+        rmObject.goodsDetail[index].goodChkStaSec = updateSta;
       }
 
     });
@@ -328,12 +348,18 @@ export default class stockCheck extends Component<{}> {
           goodCode   : stockNum,
           goodAmoOdoo: "0",
           goodAmoFir : stockAmount,
+          goodAmoSec : stockAmount,
+          goodChkStaFir: "1",
+          goodChkStaSec: "2",
         });
       } else if (this.state.checkState == 1) {
         rmObject.goodsDetail.push({
           goodCode   : stockNum,
           goodAmoOdoo: "0",
+          goodAmoFir : stockAmount,
           goodAmoSec : stockAmount,
+          goodChkStaFir: "1",
+          goodChkStaSec: "1",
         });
       }
     })
@@ -362,6 +388,8 @@ export default class stockCheck extends Component<{}> {
                       "goodOdState": this.state.checkState})
     }
 
+    console.log(formData);
+
     fetch(queryURL, {
       method: 'POST',
       headers: {
@@ -373,6 +401,7 @@ export default class stockCheck extends Component<{}> {
     })
     .then((responseData) => responseData.json() )
     .then((responseData) => {
+      console.log(responseData);
       this.updateGoodsChkSta(0);
       Actions.pop({refresh: ({key: Math.random()})})
     })
@@ -408,32 +437,30 @@ export default class stockCheck extends Component<{}> {
   }
 
   dismissDialog() {
-    pushRow(this.state.dialogGood, this.state.dialogCount);
+    this.pushRow(this.state.dialogGood, this.state.dialogTempCount);
     this.popupDialog.dismiss();
+    this.changeStateDialogAmount(0);
   }
 
 
 
   render() {
     return (
-
+<ImageBackground
+  source={ require('../assets/mainBackground.png') }
+  style={{height:667,width:360}}>
 
 
       <View style={stockStyles.mainContainer}>
-
         <KeyboardAwareScrollView>
-
         <View style={stockStyles.viewContainerR}>
-
-          <Text style={{fontSize:20, textAlign:'center'}} >
-            條碼：
-          </Text>
 
           <TextInput
             placeholder='請掃描QRCode'
             clearButtonMode='always'
             autoFocus= {true}
             style={stockStyles.textInputContainer}
+            placeholderTextColor='#5F769A'
             onChangeText={(text)=>this.changeStateNum(text)}
             ref={"textQRcode"}/>
 
@@ -443,24 +470,22 @@ export default class stockCheck extends Component<{}> {
         </View>
 
         <View style={stockStyles.viewContainerR}>
-          <Text style={{fontSize:20, textAlign:'center'}} >
-            數量：
-          </Text>
 
           <TextInput
             placeholder='請輸入數量'
             clearButtonMode='always'
-            style={stockStyles.textInputContainer}
+            style={stockStyles.textInputAmountContainer}
             onChangeText={(text)=>this.changeStateAmount(text)}
+            placeholderTextColor='#5F769A'
             keyboardType='phone-pad'
             ref={"textAmount"}/>
 
             <TouchableOpacity
-              style={stockStyles.tabItem}
+              style={stockStyles.checkButton2}
               onPress={ _ => this.pushRow(this.state.stockNum, this.state.stockAmount)}>
-              <Image
-                style={{width: 118*0.75, height: 43*0.75}}
-                source={require('../assets/checkButton.png')}/>
+              <Text style={stockStyles.checkText}>
+                確認
+              </Text>
             </TouchableOpacity>
         </View>
 
@@ -490,23 +515,30 @@ export default class stockCheck extends Component<{}> {
         </View>
 
         <View style={stockStyles.viewContainerL}>
-
-
           {
   					this.state.listViewDataNUM.length > 0 &&
 
   					<SwipeListView
+              ref='list'
   						dataSource={this.dsNUM.cloneWithRows(this.state.listViewDataNUM)}
   						renderRow={ (data, secId, rowId) => (
   							<TouchableHighlight
-  								onPress={ _ => showDialog(data, this.state.listViewDataAMO[rowId]) }
+  								onPress={ _ => this.showDialog(data, this.state.listViewDataAMO[rowId]) }
   								style={stockStyles.rowFront}
   								underlayColor={'#AAA'}
   							>
   								<View style={stockStyles.rowView}>
+                    { this.state.dataGoodState[rowId]=="0" &&
                     <View style={{flex:3.8}}>
-  								    <Text style={stockStyles.rowTextNum}>{data}</Text>
+                      <Text style={stockStyles.rowTextNumUnoreder}>{data}</Text>
                     </View>
+                    }
+                    { (this.state.dataGoodState[rowId]=="1" || this.state.dataGoodState[rowId]=="2") &&
+                    <View style={{flex:3.8}}>
+                      <Text style={stockStyles.rowTextNum}>{data}</Text>
+                    </View>
+                    }
+
                     <View style={{flex:1}}>
                       <Text style={stockStyles.rowTextAmo}>{this.state.listViewDataAMOodoo[rowId]}</Text>
                     </View>
@@ -528,50 +560,70 @@ export default class stockCheck extends Component<{}> {
   						rightOpenValue={-75}
   					/>
   				}
-        </View>
 
-          <PopupDialog
+          <View style={stockStyles.tabContainer}>
+
+            <TouchableOpacity
+              style={stockStyles.tabItem}
+              onPress={ _ => this.updateRealmOnly()}>
+              <Image
+                source={ require('../assets/icon05_saveLocal.png') }
+                style={{ width: 35, height: 35, marginTop: 11, marginBottom: 6}}/>
+
+                <Text style={stockStyles.itemFont}>
+                  暫存手機
+                </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={stockStyles.tabItem2}
+              onPress={ _ => this.updateBoth()}>
+              <Image
+                source={ require('../assets/icon04_savephone.png') }
+                style={{ width: 35, height: 35, marginTop: 11, marginBottom: 6}}/>
+
+                <Text style={stockStyles.itemFont}>
+                  匯出並結束
+                </Text>
+            </TouchableOpacity>
+          </View>
+
+        </View>
+        </KeyboardAwareScrollView>
+
+        <PopupDialog
             dialogTitle={<DialogTitle title="更改數量" />}
-            dialogButton={<DialogButton text="OK" onPress={ _ => dismissDialog() }/>}
+            actions={
+              [
+                <DialogButton text="OK"
+                              onPress={ _ => this.dismissDialog() }
+                              buttonStyle={stockStyles.dialogButtonStyle2}
+                              key="button-1"/>,
+                <DialogButton text="cancel"
+                              onPress={ _ => this.popupDialog.dismiss() }
+                              buttonStyle={stockStyles.dialogButtonStyle}
+                              key="button-2"/>
+                ]}
             ref={(popupDialog) => { this.popupDialog = popupDialog; }}
             dialogAnimation={slideAnimation}
             >
-              <View>
-                <Text>目前修改：{this.state.dialogGood}</Text>
-                <Text>當前數量：{this.state.dialogCount}</Text>
-                <Text>修改數量：</Text>
+              <View style={stockStyles.viewDialog}>
+                <Text style={stockStyles.dialogText}>目前修改：{this.state.dialogGood}</Text>
+                <Text style={stockStyles.dialogText}>當前數量：{this.state.dialogCount}</Text>
+                <Text style={stockStyles.dialogText}>修改數量：</Text>
                 <TextInput
                   placeholder='數量'
                   clearButtonMode='always'
                   autoFocus= {true}
-                  style={stockStyles.textInputContainer}
+                  style={stockStyles.dialogInputContainer}
                   onChangeText={(text)=>this.changeStateDialogAmount(text)}/>
               </View>
             </PopupDialog>
 
-          </KeyboardAwareScrollView>
-
-        <View style={stockStyles.tabContainer}>
-
-          <TouchableOpacity
-            style={stockStyles.tabItem}
-            onPress={ _ => this.updateBoth()}>
-            <Image
-              style={{width: 125*1, height: 96*0.6}}
-              source={require('../assets/endOrder.png')}/>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={stockStyles.tabItem}
-            onPress={ _ => this.updateRealmOnly()}>
-            <Image
-              style={{width: 125*1, height: 96*0.6}}
-              source={require('../assets/onlySave.png')}/>
-
-          </TouchableOpacity>
-        </View>
       </View>
 
+
+</ImageBackground>
     );
   }
 }

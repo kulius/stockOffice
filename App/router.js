@@ -9,13 +9,13 @@ import stockCheck    from './screens/stockCheck';
 
 const router =() =>{
   return (
-      <Router>
+      <Router navigationBarStyle={{ backgroundColor: '#191E26' }} titleStyle={{color: 'white'}}>
       <Scene key="root">
-        <Scene key="main" component={ main } hideNavBar/>
-        <Scene key="orderList" component={ orderList }/>
-        <Scene key="sign" component={ sign }/>
-        <Scene key="URLinput" component={ URLinput }/>
-        <Scene key="stockCheck" component={ stockCheck }/>
+        <Scene key="main" component={ main } hideNavBar />
+        <Scene key="orderList" component={ orderList } />
+        <Scene key="sign" component={ sign } />
+        <Scene key="URLinput" component={ URLinput } />
+        <Scene key="stockCheck" component={ stockCheck } />
       </Scene>
     </Router>
   );
